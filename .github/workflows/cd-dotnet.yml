@@ -1,54 +1,24 @@
-name: .NET Build, Package, and Deploy
+name: CD Deploy to Azure Web App
 
 on:
+  workflow_dispatch: # Permite que o workflow seja acionado manualmente
   push:
     branches:
-      - main
-  pull_request:
-    branches:
-      - main
+      - main # Opcional, caso queira disparar o CD automaticamente quando há push na branch main
 
 jobs:
-  build:
+  deploy:
     runs-on: ubuntu-latest
+    environment: production
 
     steps:
     - name: Checkout code
       uses: actions/checkout@v3
 
-    - name: Setup .NET SDK
-      uses: actions/setup-dotnet@v3
-      with:
-        dotnet-version: '7.0.x' # ou a versão necessária do SDK .NET
-
-    - name: Restore dependencies
-      run: dotnet restore
-
-    - name: Build project
-      run: dotnet build --configuration Release --no-restore
-
-    - name: Publish project
-      run: dotnet publish --configuration Release --no-build --output ./output
-
-    - name: Create .zip artifact
-      run: zip -r my_dotnet_project.zip ./output
-
-    - name: Upload artifact
-      uses: actions/upload-artifact@v3
-      with:
-        name: dotnet-artifact
-        path: my_dotnet_project.zip
-
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-    environment: production
-
-    steps:
     - name: Download artifact
       uses: actions/download-artifact@v3
       with:
-        name: dotnet-artifact
+        name: dotnet-artifact # Nome do artefato gerado pelo workflow de CI
 
     - name: Extract artifact
       run: unzip my_dotnet_project.zip -d ./output
@@ -56,7 +26,7 @@ jobs:
     - name: 'Deploy to Azure Web App'
       uses: azure/webapps-deploy@v2
       with:
-        app-name: 'app-dotnet-poc'
-        slot-name: 'production'
+        app-name: '<your-app-name>' # Substitua pelo nome do seu Web App no Azure
+        slot-name: 'production' # Substitua pelo nome do slot, se aplicável
         publish-profile: ${{ secrets.AZURE_CREDENTIALS }}
         package: ./output
